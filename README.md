@@ -10,6 +10,8 @@ The repo does **not** ingest or generate telemetry. It assumes the customer alre
 | --- | --- | --- |
 | Varonis SaaS / DatAlert connector | `VaronisAlerts_CL` | Alert fields such as `Severity_s`, `Status_s`, `UserName_s`, `Asset_s`, `Query_s`, and workbook-era fields such as `AlertSeverity_s`, `ThreatDetectionPolicyName_s`, `UserNames_s`, `Assets_s`, `DeviceNames_s` |
 
+These tools target the **Varonis SaaS** Sentinel connector. Other Varonis ingestion paths may land in different tables, such as `CommonSecurityLog` for older CEF/Syslog flows or `VaronisResources_CL` for resource-oriented connectors; those are intentionally out of scope for this alpha.
+
 ## What this publishes
 
 `scripts/publish-mcp-tools.py` calls the Sentinel Platform Services authoring API and publishes each file in `mcp-tools/*.kql` as a Kqs custom MCP tool under one collection, defaulting to:
@@ -112,7 +114,7 @@ The script is idempotent: it tolerates an existing collection and uses `PUT` for
    ```bash
    python3 run_tools.py --prompt "Summarize Varonis alert posture" --show-raw
    python3 run_tools.py --prompt "Investigate Varonis alerts for alice@example.com" --show-raw
-   python3 run_tools.py --prompt "Investigate Varonis asset finance/share" --show-raw
+   python3 run_tools.py --prompt "Investigate Varonis asset 'finance/share'" --show-raw
    ```
 
 The runner calls the real custom MCP endpoint at `https://sentinel.microsoft.com/mcp/custom/<collection>/` using Azure credentials. It does not use generated telemetry.

@@ -74,8 +74,7 @@ def extract_asset(message: str) -> str:
     fallback = os.getenv("VARONIS_ASSET_NAME")
     if fallback:
         return fallback
-    words = message.split()
-    return words[-1] if words else ""
+    raise ValueError("Asset investigation requires a quoted asset value in the prompt or VARONIS_ASSET_NAME in the environment.")
 
 
 def render_arguments(message: str, tool_name: str, template: str, defaults: dict[str, Any]) -> dict[str, Any]:

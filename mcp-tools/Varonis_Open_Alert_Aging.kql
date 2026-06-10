@@ -8,7 +8,7 @@ VaronisSource
     SeverityB = tostring(column_ifexists("Severity_s", "")),
     StatusA = tostring(column_ifexists("Status_s", "")),
     StatusB = tostring(column_ifexists("AlertStatus_s", "")),
-    Policy = coalesce(tostring(column_ifexists("ThreatDetectionPolicyName_s", "")), tostring(column_ifexists("Name_s", "")), tostring(column_ifexists("Category", "")), "Unknown"),
+    Policy = coalesce(tostring(column_ifexists("ThreatDetectionPolicyName_s", "")), tostring(column_ifexists("Name_s", "")), tostring(column_ifexists("Category_s", "")), "Unknown"),
     UserEvidence = coalesce(tostring(column_ifexists("UserNames_s", "")), tostring(column_ifexists("UserName_s", "")), tostring(column_ifexists("SamAccountName_s", ""))),
     AssetEvidence = coalesce(tostring(column_ifexists("Assets_s", "")), tostring(column_ifexists("Asset_s", "")), tostring(column_ifexists("DeviceNames_s", "")))
 | extend

@@ -47,7 +47,7 @@ Do not create generated telemetry. These tools should query the production Varon
    # edit .env
    python3 run_tools.py --prompt "Summarize Varonis alert posture" --show-raw
    python3 run_tools.py --prompt "Investigate Varonis alerts for alice@example.com" --show-raw
-   python3 run_tools.py --prompt "Investigate Varonis asset finance/share" --show-raw
+   python3 run_tools.py --prompt "Investigate Varonis asset 'finance/share'" --show-raw
    ```
 
 5. Register the custom MCP endpoint in the consuming agent:
