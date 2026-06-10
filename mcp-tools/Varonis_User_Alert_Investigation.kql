@@ -1,0 +1,38 @@
+let lookback = 24h;
+let UserName = tolower(trim(@" ", "{UserName}"));
+let VaronisSource = union isfuzzy=true (datatable(TimeGenerated:datetime)[]), VaronisAlerts_CL;
+VaronisSource
+| where TimeGenerated >= ago(lookback)
+| extend
+    AlertTime = coalesce(todatetime(column_ifexists("AlertTime_t", datetime(null))), todatetime(column_ifexists("Time_t", datetime(null))), TimeGenerated),
+    SeverityA = tostring(column_ifexists("AlertSeverity_s", "")),
+    SeverityB = tostring(column_ifexists("Severity_s", "")),
+    StatusA = tostring(column_ifexists("Status_s", "")),
+    StatusB = tostring(column_ifexists("AlertStatus_s", "")),
+    Policy = coalesce(tostring(column_ifexists("ThreatDetectionPolicyName_s", "")), tostring(column_ifexists("Name_s", "")), tostring(column_ifexists("Category", ""))),
+    UserEvidence = tolower(coalesce(tostring(column_ifexists("UserNames_s", "")), tostring(column_ifexists("UserName_s", "")), tostring(column_ifexists("SamAccountName_s", "")))),
+    AssetEvidence = coalesce(tostring(column_ifexists("Assets_s", "")), tostring(column_ifexists("Asset_s", "")), tostring(column_ifexists("DeviceNames_s", ""))),
+    SensitiveFlag = tostring(column_ifexists("AssetContainsSensitiveData_s", "")),
+    FlaggedFlag = tostring(column_ifexists("AssetContainsFlaggedData_s", "")),
+    EventCount = todouble(column_ifexists("NumOfAlertedEvents_d", 0.0))
+| extend
+    Severity = iff(isnotempty(SeverityA), SeverityA, iff(isnotempty(SeverityB), SeverityB, "Unknown")),
+    Status = iff(isnotempty(StatusA), StatusA, iff(isnotempty(StatusB), StatusB, "Unknown")),
+    HasSensitiveData = SensitiveFlag in~ ("true", "yes", "1") or FlaggedFlag in~ ("true", "yes", "1")
+| where isnotempty(UserName) and UserEvidence contains UserName
+| summarize
+    Alerts = count(),
+    HighSeverityAlerts = countif(Severity in~ ("High", "Critical")),
+    OpenAlerts = countif(Status has_any ("New", "Open", "Under Investigation")),
+    SensitiveDataAlerts = countif(HasSensitiveData),
+    TotalAlertedEvents = sum(EventCount),
+    Policies = make_set(Policy, 20),
+    Assets = make_set(AssetEvidence, 20),
+    Severities = make_set(Severity, 10),
+    Statuses = make_set(Status, 10),
+    FirstSeen = min(AlertTime),
+    LastSeen = max(AlertTime)
+    by UserEvidence
+| extend RiskScore = (HighSeverityAlerts * 10) + (SensitiveDataAlerts * 8) + (OpenAlerts * 3) + Alerts
+| order by RiskScore desc
+| take 25

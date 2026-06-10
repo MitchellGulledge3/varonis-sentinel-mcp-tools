@@ -1,0 +1,30 @@
+let lookback = 7d;
+let VaronisSource = union isfuzzy=true (datatable(TimeGenerated:datetime)[]), VaronisAlerts_CL;
+VaronisSource
+| where TimeGenerated >= ago(lookback)
+| extend
+    AlertTime = coalesce(todatetime(column_ifexists("AlertTime_t", datetime(null))), todatetime(column_ifexists("Time_t", datetime(null))), TimeGenerated),
+    SeverityA = tostring(column_ifexists("AlertSeverity_s", "")),
+    SeverityB = tostring(column_ifexists("Severity_s", "")),
+    StatusA = tostring(column_ifexists("Status_s", "")),
+    StatusB = tostring(column_ifexists("AlertStatus_s", "")),
+    Policy = coalesce(tostring(column_ifexists("ThreatDetectionPolicyName_s", "")), tostring(column_ifexists("Name_s", "")), tostring(column_ifexists("Category", "")), "Unknown"),
+    UserEvidence = coalesce(tostring(column_ifexists("UserNames_s", "")), tostring(column_ifexists("UserName_s", "")), tostring(column_ifexists("SamAccountName_s", ""))),
+    AssetEvidence = coalesce(tostring(column_ifexists("Assets_s", "")), tostring(column_ifexists("Asset_s", "")), tostring(column_ifexists("DeviceNames_s", "")))
+| extend
+    Severity = iff(isnotempty(SeverityA), SeverityA, iff(isnotempty(SeverityB), SeverityB, "Unknown")),
+    Status = iff(isnotempty(StatusA), StatusA, iff(isnotempty(StatusB), StatusB, "Unknown")),
+    AgeHours = datetime_diff("hour", now(), AlertTime)
+| where Status has_any ("New", "Open", "Under Investigation")
+| summarize
+    OpenAlerts = count(),
+    HighSeverityOpenAlerts = countif(Severity in~ ("High", "Critical")),
+    OldestAlertTime = min(AlertTime),
+    MaxAgeHours = max(AgeHours),
+    AvgAgeHours = avg(AgeHours),
+    Users = make_set(UserEvidence, 15),
+    Assets = make_set(AssetEvidence, 15),
+    Severities = make_set(Severity, 10)
+    by Policy, Status
+| order by MaxAgeHours desc, HighSeverityOpenAlerts desc, OpenAlerts desc
+| take 50
