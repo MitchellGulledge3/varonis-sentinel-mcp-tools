@@ -87,6 +87,25 @@ python3 scripts/publish-mcp-tools.py \
 
 The script is idempotent: it tolerates an existing collection and uses `PUT` for each tool, so rerunning updates the tool definitions.
 
+## Quick start for Claude Code
+
+```bash
+TOKEN=$(az account get-access-token \
+  --resource 4500ebfb-89b6-4b14-a480-7f749797bfcd \
+  --query accessToken -o tsv)
+
+python3 scripts/write-claude-mcp-config.py \
+  --collection Varonis-Sentinel-MCP-Tools \
+  --bearer-token "$TOKEN"
+```
+
+Suggested Claude Code prompt:
+
+```text
+Read this repo. Use the Varonis-Sentinel-MCP-Tools MCP server from .mcp.json.
+List the available tools, then call them for workspace <workspace-customer-id>.
+```
+
 ## Run locally from the terminal
 
 1. Copy environment template:
@@ -183,12 +202,22 @@ At runtime, every tool requires:
 | --- | --- |
 | `mcp-tools/*.kql` | Production-table KQL definitions published as custom MCP tools |
 | `scripts/publish-mcp-tools.py` | API publisher for the Sentinel custom MCP collection |
+| `scripts/write-claude-mcp-config.py` | Writes a gitignored Claude Code `.mcp.json` config |
 | `scripts/write-vscode-mcp-config.py` | Writes a gitignored VS Code MCP config with a short-lived bearer token |
 | `run_tools.py` | Local runner that selects a tool from a natural-language prompt and calls the custom MCP endpoint |
 | `sentinel_mcp_tools/client.py` | Minimal JSON-RPC client for Sentinel custom MCP endpoints |
 | `docs/tool-reference.md` | Deep explanation of every tool and how agents should use it |
 | `docs/sample-output.md` | Captured/sanitized sample output from local runs |
 | `docs/runbook.md` | Alpha handoff runbook for ISV and customer teams |
+
+
+## Troubleshooting
+
+| Symptom | Likely cause | Fix |
+| --- | --- | --- |
+| Tools publish but return no rows | No rows in CCF tables for the last 24h | Confirm production ingestion or adjust the `lookback` variable in the KQL files |
+| Claude Code 401/403 | Token expired or identity lacks access | Regenerate `.mcp.json` with a fresh token and verify Sentinel roles |
+| Empty result for specific entity | Entity name mismatch | Check capitalization or exact spelling, though tools try to tolerate case differences |
 
 ## Notes for alpha users
 
